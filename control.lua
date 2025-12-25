@@ -3,24 +3,19 @@
 
 debug = settings.global["on-belt-speed-logging"].value
 
-function init_player(player)
-    if storage.modifiers == nil then
-        storage.modifiers = {}
-    end
-
-    debug_log(player, "Initializing modifiers for player " .. tostring(player.name))
-    if storage.modifiers[player.name] == nil then
-        storage.modifiers[player.name] = {
-            applied_value = 1,
-            og_value = 0
-        }
-        debug_log(player, "Modifiers for player " .. tostring(player.name) .. " have been initialized.")
+function debug_log(player, message)
+    if debug then
+        game.print("Belt Debug for " .. tostring(player.name) .. ": " .. message)
     end
 end
 
-function init_from_event(event)
-    local player = game.get_player(event.player_index)
-    init_player(player)
+function init_storage()
+    storage.modifiers = storage.modifiers or {}
+end
+
+function init_player(player)
+    debug_log(player, "Initializing modifiers for player " .. tostring(player.name))
+    storage.modifiers[player.name] = storage.modifiers[player.name] or { applied_value = 1, og_value = 0 }
 end
 
 function init_all_players()
@@ -29,11 +24,11 @@ function init_all_players()
     end
 end
 
-script.on_event(defines.events.on_player_created, init_from_event)
-script.on_event(defines.events.on_player_joined_game, init_all_players)
-script.on_event(defines.events.on_player_respawned, init_from_event)
-script.on_event(defines.events.on_singleplayer_init, init_all_players)
-script.on_event(defines.events.on_multiplayer_init, init_all_players)
+script.on_configuration_changed(function()
+    init_storage()
+    init_all_players()
+end)
+script.on_init(init_storage)
 
 function set_modifier(player, value)
     storage.modifiers[player.name].applied_value = value
@@ -49,12 +44,6 @@ end
 
 function get_og_modifier(player)
     return storage.modifiers[player.name].og_value
-end
-
-function debug_log(player, message)
-    if debug then
-        player.print(message)
-    end
 end
 
 function find_entities_filtered(player, entity_type, left_bound, right_bound)
@@ -100,6 +89,14 @@ function check_for_belt_immunity(player)
     return false
 end
 
+function speed_reset(player)
+    if get_modifier(player) ~= 1 then
+        player.character_running_speed_modifier = get_og_modifier(player)
+        set_modifier(player, 1)
+        debug_log(player, "Speed has been reset")
+    end
+end
+
 script.on_event(defines.events.on_player_changed_position,
     function(event)
         local player = game.get_player(event.player_index)
@@ -115,28 +112,21 @@ script.on_event(defines.events.on_player_changed_position,
             return
         end
 
-        if not storage.modifiers[player.name] then
-            init_player(player)
-        end
-
         if player.character_running_speed_modifier ~= nil and get_modifier(player) == 1 then
             set_og_modifier(player, player.character_running_speed_modifier)
         end
 
         debug_log(player, "Running speed: " .. tostring(player.character_running_speed))
-        debug_log(player, "Current speed modifier: " .. tostring(player.character_running_speed_modifier)..", Original speed modifier:"..tostring(get_og_modifier(player)))
+        debug_log(player, "Current speed modifier: " .. tostring(player.character_running_speed_modifier) .. ", Original speed modifier:" .. tostring(get_og_modifier(player)))
 
         local belt = find_entity_by_type(player, "transport-belt")
         if belt == nil then
-            if get_modifier(player) ~= 1 then
-                player.character_running_speed_modifier = get_og_modifier(player)
-                set_modifier(player, 1)
-                debug_log(player, "Speed has been reset")
-            end
+            speed_reset(player)
             return
         end
 
         if player.character.direction ~= belt.direction then
+            speed_reset(player)
             return
         end
 

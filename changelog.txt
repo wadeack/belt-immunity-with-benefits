@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.8
+Date: 2025.12.26
+  Info:
+    - Code has been refactored to be inline with data lifecycle.
+  Bugfixes:
+    - Fixed speed reset when player changes running direction.
+    - Fixed debug logging in multiplayer. Previously it was causing desync.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.1.7
 Date: 2025.12.25
   Bugfixes:
