@@ -1,8 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.6
+Date: 2025.12.24
+  Bugfixes:
+    - Fixed a crash that occurred when joining a multiplayer server. It is still possible to
+      experience a desync when connecting if any connected player is benefiting from the belt speed
+      boost while having belt immunity.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.1.5
 Date: 2025.12.21
   Bugfixes:
-    - Fixed a speed calculation in multiplayer by storing modifiers per player instead of globally.
+    - Fixed speed calculation in multiplayer by storing modifiers per player instead of globally.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.4
