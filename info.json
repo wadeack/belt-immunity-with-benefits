@@ -1,9 +1,12 @@
 {
   "name": "belt-immunity-with-benefits",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "title": "Belt Immunity With Benefits",
   "author": "wadeack",
   "factorio_version": "2.0",
-  "dependencies": ["base >= 2.0"],
+  "dependencies": [
+      "base >= 2.0",
+      "! RPGsystem"
+  ],
   "description": "Are you annoyed by belt immunity equipment that negates the positive bonus when running along the belts? This mod fixes it by virtually disabling the immunity when the character is moving in the same direction as the belts underneath them."
 }
