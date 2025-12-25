@@ -1,0 +1,28 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.4
+Date: 2025.12.20
+  Info:
+    - Added changelog.txt.
+  Changes:
+    - Added a mod setting to enable/disable debug logging.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.3
+Date: 2025.12.19
+  Bugfixes:
+    - Fixed an issue with speed modifier being overwritten. Previously this caused loss of speed
+      bonuses from other mods, like RPGsystem.
+  Changes:
+    - Removed RPGsystem as an incompatible mod.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.2
+Date: 2025.12.18
+  Changes:
+    - Added RPGsystem as an incompatible mod.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.1
+Date: 2025.12.10
+  Info:
+    - Initial release.
