@@ -3,17 +3,18 @@
 
 debug = settings.global["on-belt-speed-logging"].value
 
-mod_storage = {}
-
 function init_player(player)
+    if storage.modifiers == nil then
+        storage.modifiers = {}
+    end
+
     debug_log(player, "Initializing modifiers for player " .. tostring(player.name))
-    if mod_storage[player.name] == nil then
-        mod_storage[player.name] = {
-            original_speed_modifier = 0,
-            speed_is_modified = false,
-            modifier_to_avoid = 1
+    if storage.modifiers[player.name] == nil then
+        storage.modifiers[player.name] = {
+            applied_value = 1,
+            og_value = 0
         }
-    debug_log(player, "Modifiers for player " .. tostring(player.name) .. " have been initialized.")
+        debug_log(player, "Modifiers for player " .. tostring(player.name) .. " have been initialized.")
     end
 end
 
@@ -34,28 +35,20 @@ script.on_event(defines.events.on_player_respawned, init_from_event)
 script.on_event(defines.events.on_singleplayer_init, init_all_players)
 script.on_event(defines.events.on_multiplayer_init, init_all_players)
 
-function set_osm(player, value)
-    mod_storage[player.name].original_speed_modifier = value
+function set_modifier(player, value)
+    storage.modifiers[player.name].applied_value = value
 end
 
-function get_osm(player)
-    return mod_storage[player.name].original_speed_modifier
+function get_modifier(player)
+    return storage.modifiers[player.name].applied_value
 end
 
-function set_is_modified_flag(player, value)
-    mod_storage[player.name].speed_is_modified = value
+function set_og_modifier(player, value)
+    storage.modifiers[player.name].og_value = value
 end
 
-function get_is_modified_flag(player)
-    return mod_storage[player.name].speed_is_modified
-end
-
-function set_mta(player, value)
-    mod_storage[player.name].modifier_to_avoid = value
-end
-
-function get_mta(player)
-    return mod_storage[player.name].modifier_to_avoid
+function get_og_modifier(player)
+    return storage.modifiers[player.name].og_value
 end
 
 function debug_log(player, message)
@@ -122,47 +115,44 @@ script.on_event(defines.events.on_player_changed_position,
             return
         end
 
-        if mod_storage[player.name] == nil then
+        if not storage.modifiers[player.name] then
             init_player(player)
         end
 
-        if player.character_running_speed_modifier ~= nil then
-            if get_is_modified_flag(player) == false then
-                set_osm(player, player.character_running_speed_modifier)
-            end
+        if player.character_running_speed_modifier ~= nil and get_modifier(player) == 1 then
+            set_og_modifier(player, player.character_running_speed_modifier)
         end
+
         debug_log(player, "Running speed: " .. tostring(player.character_running_speed))
-        debug_log(player, "Current speed modifier: " .. tostring(player.character_running_speed_modifier)..", Original speed modifier:"..tostring(get_osm(player)))
+        debug_log(player, "Current speed modifier: " .. tostring(player.character_running_speed_modifier)..", Original speed modifier:"..tostring(get_og_modifier(player)))
 
         local belt = find_entity_by_type(player, "transport-belt")
         if belt == nil then
-            if get_is_modified_flag(player) == true then
-                player.character_running_speed_modifier = get_osm(player)
-                set_is_modified_flag(player, false)
-                set_mta(player, 1)
+            if get_modifier(player) ~= 1 then
+                player.character_running_speed_modifier = get_og_modifier(player)
+                set_modifier(player, 1)
                 debug_log(player, "Speed has been reset")
             end
             return
         end
 
-        if not (player.character.direction == belt.direction) then
+        if player.character.direction ~= belt.direction then
             return
         end
 
         local belt_speed = belt.prototype.belt_speed
         debug_log(player, "Belt speed: " .. tostring(belt_speed))
 
-        local base_speed_before_last_modifier = player.character_running_speed/(get_mta(player) + get_osm(player))
+        local base_speed_before_last_modifier = player.character_running_speed/(get_modifier(player) + get_og_modifier(player))
 
         debug_log(player, "Base speed before modifiers: " .. tostring(base_speed_before_last_modifier))
         local modifier = (base_speed_before_last_modifier + belt_speed)/base_speed_before_last_modifier
-        debug_log(player, "Modifier value: " .. tostring(modifier) .. ", Modifier to avoid: " .. tostring(get_mta(player)) .. ", Modifier to be applied: " .. tostring(modifier - 1 + get_osm(player)))
-        is_different_modifier = (modifier ~= get_mta(player))
+        debug_log(player, "Modifier value: " .. tostring(modifier) .. ", Modifier to avoid: " .. tostring(get_modifier(player)) .. ", Modifier to be applied: " .. tostring(modifier - 1 + get_og_modifier(player)))
+        is_different_modifier = (modifier ~= get_modifier(player))
         if is_different_modifier then
             debug_log(player, "Speed will be modified.")
-            set_mta(player, modifier)
-            player.character_running_speed_modifier = modifier - 1 + get_osm(player)
-            set_is_modified_flag(player, true)
+            set_modifier(player, modifier)
+            player.character_running_speed_modifier = modifier - 1 + get_og_modifier(player)
         end
     end
 )

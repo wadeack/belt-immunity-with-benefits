@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.7
+Date: 2025.12.25
+  Bugfixes:
+    - Fixed a desync issue that happend when player was joining the multiplayer game while some
+      other player was running with belt immunity along the belts.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.1.6
 Date: 2025.12.24
   Bugfixes:
