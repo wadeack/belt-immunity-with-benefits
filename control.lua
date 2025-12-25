@@ -1,10 +1,62 @@
 -- This file is part of belt-immunity-with-benefits mod
 -- Licensed under the MIT License. See LICENSE file for details.
 
-original_speed_modifier = 0
-speed_is_modified = false
-modifier_to_avoid = 1
 debug = settings.global["on-belt-speed-logging"].value
+
+mod_storage = {}
+
+function init_player(player)
+    debug_log(player, "Initializing modifiers for player " .. tostring(player.name))
+    if mod_storage[player.name] == nil then
+        mod_storage[player.name] = {
+            original_speed_modifier = 0,
+            speed_is_modified = false,
+            modifier_to_avoid = 1
+        }
+    debug_log(player, "Modifiers for player " .. tostring(player.name) .. " have been initialized.")
+    end
+end
+
+function init_from_event(event)
+    local player = game.get_player(event.player_index)
+    init_player(player)
+end
+
+function init_all_players()
+    for _, player in pairs(game.players) do
+        init_player(player)
+    end
+end
+
+script.on_event(defines.events.on_player_created, init_from_event)
+script.on_event(defines.events.on_player_joined_game, init_all_players)
+script.on_event(defines.events.on_player_respawned, init_from_event)
+script.on_event(defines.events.on_singleplayer_init, init_all_players)
+script.on_event(defines.events.on_multiplayer_init, init_all_players)
+
+function set_osm(player, value)
+    mod_storage[player.name].original_speed_modifier = value
+end
+
+function get_osm(player)
+    return mod_storage[player.name].original_speed_modifier
+end
+
+function set_is_modified_flag(player, value)
+    mod_storage[player.name].speed_is_modified = value
+end
+
+function get_is_modified_flag(player)
+    return mod_storage[player.name].speed_is_modified
+end
+
+function set_mta(player, value)
+    mod_storage[player.name].modifier_to_avoid = value
+end
+
+function get_mta(player)
+    return mod_storage[player.name].modifier_to_avoid
+end
 
 function debug_log(player, message)
     if debug then
@@ -61,12 +113,12 @@ script.on_event(defines.events.on_player_changed_position,
         if player.controller_type == defines.controllers.character and player.character.grid then
             local has_immunity = check_for_belt_immunity(player)
             if player.character_running_speed_modifier ~= nil then
-                if speed_is_modified == false then
-                    original_speed_modifier = player.character_running_speed_modifier
+                if get_is_modified_flag(player) == false then
+                    set_osm(player, player.character_running_speed_modifier)
                 end
             end
             debug_log(player, "Running speed: " .. tostring(player.character_running_speed))
-            debug_log(player, "Current speed modifier: " .. tostring(player.character_running_speed_modifier)..", Original speed modifier:"..tostring(original_speed_modifier))
+            debug_log(player, "Current speed modifier: " .. tostring(player.character_running_speed_modifier)..", Original speed modifier:"..tostring(get_osm(player)))
 
             if not has_immunity then
                 return
@@ -74,10 +126,10 @@ script.on_event(defines.events.on_player_changed_position,
 
             local belt = find_entity_by_type(player, "transport-belt")
             if belt == nil then
-                if speed_is_modified == true then
-                    player.character_running_speed_modifier = original_speed_modifier
-                    speed_is_modified = false
-                    modifier_to_avoid = 1
+                if get_is_modified_flag(player) == true then
+                    player.character_running_speed_modifier = get_osm(player)
+                    set_is_modified_flag(player, false)
+                    set_mta(player, 1)
                     debug_log(player, "Speed has been reset")
                 end
                 return
@@ -90,18 +142,17 @@ script.on_event(defines.events.on_player_changed_position,
             local belt_speed = belt.prototype.belt_speed
             debug_log(player, "Belt speed: " .. tostring(belt_speed))
 
-            local base_speed_before_last_modifier = player.character_running_speed/(modifier_to_avoid + original_speed_modifier)
+            local base_speed_before_last_modifier = player.character_running_speed/(get_mta(player) + get_osm(player))
 
             debug_log(player, "Base speed before modifiers: " .. tostring(base_speed_before_last_modifier))
             local modifier = (base_speed_before_last_modifier + belt_speed)/base_speed_before_last_modifier
-            debug_log(player, "Modifier value: " .. tostring(modifier) .. ", Modifier to avoid: " .. tostring(modifier_to_avoid) .. ", Modifier to be applied: " .. tostring(modifier - 1 + original_speed_modifier))
-            is_different_modifier = (modifier ~= modifier_to_avoid)
+            debug_log(player, "Modifier value: " .. tostring(modifier) .. ", Modifier to avoid: " .. tostring(get_mta(player)) .. ", Modifier to be applied: " .. tostring(modifier - 1 + get_osm(player)))
+            is_different_modifier = (modifier ~= get_mta(player))
             if is_different_modifier then
                 debug_log(player, "Speed will be modified.")
-
-                modifier_to_avoid = modifier
-                player.character_running_speed_modifier = modifier - 1 + original_speed_modifier
-                speed_is_modified = true
+                set_mta(player, modifier)
+                player.character_running_speed_modifier = modifier - 1 + get_osm(player)
+                set_is_modified_flag(player, true)
             end
         end
     end

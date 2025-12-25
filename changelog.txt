@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.5
+Date: 2025.12.21
+  Bugfixes:
+    - Fixed a speed calculation in multiplayer by storing modifiers per player instead of globally.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 2025.12.20
   Info:
